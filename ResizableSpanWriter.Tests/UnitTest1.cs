@@ -32,7 +32,7 @@ public class ResizableSpanWriterTests
 	
         for (int i = 0; i < cnt; i++)
         {
-            Span<int> ii = new int[1] { i };
+            var ii = new int[1] { i };
             var slc = shouldEqual.Slice(i, 1);
             ii.CopyTo(slc);
 

@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace ResizableSpanWriter;
 
@@ -9,16 +10,16 @@ namespace ResizableSpanWriter;
 /// <typeparam name="T">The type of items to write to the current instance.</typeparam>
 /// <remarks>
 public class ResizableSpanWriter<T>
-{    
+{
     /// <summary>
     /// The default size to use to expand the buffer.
     /// </summary>
     private const int DefaultGrowthIncrement = 256;
-    
+
     /// <summary>
     /// Array on current rental from the array pool.  Reference to the same memory as <see cref="_buffer"/>.
     /// </summary>
-    private T[] _last;
+    private T[] _array;
 
     /// <summary>
     /// The increment to use to grow the writer.
@@ -43,7 +44,7 @@ public class ResizableSpanWriter<T>
         : this(ArrayPool<T>.Shared, DefaultGrowthIncrement)
     {
     }
-	
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ResizableSpanWriter{T}"/> class.
     /// </summary>
@@ -63,9 +64,9 @@ public class ResizableSpanWriter<T>
     public ResizableSpanWriter(ArrayPool<T> pool, int growthGrowthIncrement)
     {
         if (growthGrowthIncrement < 1)
-            throw new  ArgumentOutOfRangeException("The growth increment parameter bust be greater than 0");
+            throw new ArgumentOutOfRangeException("The growth increment parameter bust be greater than 0");
 
-        this._buffer = _last = ArrayPool<T>.Shared.Rent(growthGrowthIncrement);
+        this._buffer = _array = ArrayPool<T>.Shared.Rent(growthGrowthIncrement);
         this._growthIncrement = growthGrowthIncrement;
         this._index = 0;
     }
@@ -81,7 +82,7 @@ public class ResizableSpanWriter<T>
             return this._buffer.Slice(0, _index);
         }
     }
-    
+
     /// <summary>
     /// Gets the data written to the underlying buffer so far as a <see cref="ReadOnlySpan{T}"/>.
     /// </summary>
@@ -93,7 +94,7 @@ public class ResizableSpanWriter<T>
             return this._buffer.Span.Slice(0, _index);
         }
     }
-
+    
     /// <summary>
     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
     /// </summary>
@@ -101,52 +102,66 @@ public class ResizableSpanWriter<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(Span<T> items)
     {
-        var slice = Slice(items.Length);
-        
-        slice = items;
+        Copy(items);
     }
 
-     /// <summary>
+    /// <summary>
+    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
+    /// </summary>
+    /// <param name="items">Array of items to append.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(T[] items)
+    {
+        Copy(items);
+    }
+
+    /// <summary>
+    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
+    /// </summary>
+    /// <param name="items">A <see cref="Memory{T}"/> of items to append.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(Memory<T> items)
+    {
+        Copy(items.Span);
+    }
+
+    /// <summary>
     /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
     /// </summary>
-    /// <param name="items">A <see cref="Span{T}"/> of items to append.</param>
+    /// <param name="item"> Item <see cref="T"/> to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(T item)
     {
-        var slice = Slice(1);
-		
-        slice[0]= item;
+        Copy(item);
     }
 
-     /// <summary>
-     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
-     /// </summary>
-     /// <param name="items">Pointer of items, which must be pinned/fixed.</param>
-     /// <param name="length">The length of the pointer</param>
-     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-     public unsafe void Write(T* items, int length)
-     {
-         var slice = Slice(length);
+    /// <summary>
+    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
+    /// </summary>
+    /// <param name="items">Pointer of items, which must be pinned/fixed.</param>
+    /// <param name="length">The length of the pointer</param>
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public unsafe void Write(T* items, int length)
+    //{
+    //   Grow(length);
 
-         for (var i = 0; i < length; i++)
-         {
-             slice[i] = items[i];
-         }
-     }
+    //    for (var i = 0; i < length; i++)
+    //    {
+    //        slice[i] = items[i];
+    //    }
+    //}
 
-     /// <summary>
-     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
-     /// </summary>
-     /// <param name="items">A <see cref="Span{T}"/> of items to append.</param>
-     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-     public ValueTask WriteAsync(Memory<T> items)
-     {
-         var slice = Slice(items.Length);
-        
-         slice = items.Span;
+    /// <summary>
+    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
+    /// </summary>
+    /// <param name="items">A <see cref="Span{T}"/> of items to append.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ValueTask WriteAsync(Memory<T> items)
+    {
+        Copy(items.Span);
 
-         return ValueTask.CompletedTask;
-     }
+        return ValueTask.CompletedTask;
+    }
 
     /// <summary>
     /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
@@ -155,9 +170,7 @@ public class ResizableSpanWriter<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ValueTask WriteAsync(T item)
     {
-        var slice = Slice(1);
-		
-        slice[0]= item;
+        Copy(item);
 
         return ValueTask.CompletedTask;
     }
@@ -170,14 +183,14 @@ public class ResizableSpanWriter<T>
     private void Grow(int length)
     {
         if (_index + length <= _buffer.Span.Length) return;
-		
+
         var next = ArrayPool<T>.Shared.Rent(Math.Max(_index + _growthIncrement, _index + length));
 
         _buffer.Span.CopyTo(next);
 
-        ArrayPool<T>.Shared.Return(_last);
+        ArrayPool<T>.Shared.Return(_array);
 
-        _buffer = _last = next;
+        _buffer = _array = next;
     }
 
     /// <summary>
@@ -186,14 +199,39 @@ public class ResizableSpanWriter<T>
     /// <param name="length">The length of the desired slice.</param>
     /// <returns><see cref="Span{T}"/> of the underlying buffer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Span<T> Slice(int length)
+    private void Copy(Span<T> items)
     {
-        Grow(length);
+        Grow(items.Length);
 
-        var slc = _buffer.Span.Slice(_index, length);
-	
-        _index += length;
-		
-        return slc;
+        var slc = _buffer.Span.Slice(_index, items.Length);
+
+        items.CopyTo(slc);
+
+        _index += items.Length;
+       
+        //unsafe
+        //{
+        //    fixed (T* ptr = slc, ptrSrc = items)
+        //    {
+        //        Unsafe.CopyBlockUnaligned(ptr, ptrSrc, (uint)items.Length);
+        //    }
+        //}
+
+    }
+    /// <summary>
+    /// Returns a slice of the underlying buffer
+    /// </summary>
+    /// <param name="length">The length of the desired slice.</param>
+    /// <returns><see cref="Span{T}"/> of the underlying buffer.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void Copy(T item)
+    {
+        Grow(1);
+
+        var slc = _buffer.Span.Slice(_index, 1);
+
+        _index += 1;
+
+        slc[0] = item;
     }
 }
