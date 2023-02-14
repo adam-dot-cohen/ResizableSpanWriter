@@ -1,6 +1,6 @@
 # Overview
 ![]()
-[![NuGet version (ResizableSpanWriter)](https://img.shields.io/badge/nuget-v1.0.0-blue?style=flat-square)](https://www.nuget.org/packages/ResizableSpanWriter/)
+[![NuGet version (ResizableSpanWriter)](https://img.shields.io/badge/nuget-v1.0.1-blue?style=flat-square)](https://www.nuget.org/packages/ResizableSpanWriter/)
 
 High-performance writer for creating Span<T> and Memory<T> structures that outperforms MemoryStream, RecyclableMemoryStream and ArrayPoolBufferWriter (MS High Performance Toolkit).
 
