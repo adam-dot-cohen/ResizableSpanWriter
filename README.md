@@ -9,12 +9,13 @@ High-performance writer for creating Span<T> and Memory<T> structures that outpe
 // count of sample integers we'll append the writer
 var cnt = 2000;
 
-// instantiate with desired type arguement
+//1. INSTANTIATE
 var writer = new ResizableSpanWriter<int>();
 
 // normal span for illustrative purposes and checksum below
 Span<int> span = new int[cnt];
 
+//2. WRITE SINGLE ENTRIES - SEE #4 BELOW FOR ARRAYS...
 for (int i = 0; i < cnt; i++)
 {
 	// write to ResizableSpanWriter
@@ -24,8 +25,11 @@ for (int i = 0; i < cnt; i++)
 	span[i] = i;
 }
 
-// read from ResizableSpanWriter.WrittenSpan
-Console.WriteLine(writer.WrittenSpan.SequenceEqual(span));	
+//3. READ FROM - WRITTENSPAN OR WRITTENMEMORY
+Console.WriteLine(writer.WrittenSpan.SequenceEqual(span));
+
+//4. ALTERNATIVELIY - WRITE ARRAYS, SPANS, MEMORY
+writer.Write(span);
 ```
 ## Benchmarks
 Benchmarks performed using BenchmarkDotNet...
