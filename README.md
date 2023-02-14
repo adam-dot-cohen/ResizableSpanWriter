@@ -28,7 +28,7 @@ for (int i = 0; i < cnt; i++)
 Console.WriteLine(writer.WrittenSpan.SequenceEqual(span));	
 ```
 ## Benchmarks
-Benchmarks performed using BenchmarkDotNet follow the intended usage pattern of serializing and deserializing a single instance of an object at a time (as opposed to batch collection serialization used in the benchmarks published by other libraries such as Apex).  The benchmarks charts displayed below represent 1 million syncronous serialization and deserialization operations of the following object:
+Benchmarks performed using BenchmarkDotNet...
 
 ```
 BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19044.1415 (21H2)
