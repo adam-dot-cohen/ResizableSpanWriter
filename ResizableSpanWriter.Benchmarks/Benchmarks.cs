@@ -11,10 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Columns;
 
 namespace ResizableSpanWriter.Benchmarks;
 [SimpleJob(runStrategy: RunStrategy.Throughput, launchCount: 1, invocationCount: 1, runtimeMoniker: RuntimeMoniker.Net70)]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
+[HideColumns(Column.StdDev, Column.Median, Column.RatioSD)]
+[MemoryDiagnoser]
 public class ChampionChallengerBenchmarks
 {
     private static readonly RecyclableMemoryStreamManager manager = new();
@@ -30,21 +33,15 @@ public class ChampionChallengerBenchmarks
         var writer = new ResizableSpanWriter<byte>();
         Write(writer);
     }
-    [Benchmark(Description = "MemoryStream", Baseline = true)]
-    public void WriteToMemoryStream()
-    {
-        using var ms = new MemoryStream();
-        Write(ms);
-    }
 
-    [Benchmark(Description = "ArrayPoolBufferWriter")]
+    [Benchmark(Description = "MS ArrayPoolBufferWriter")]
     public void ArrayPoolBufferWriterInternal()
     {
         using ArrayPoolBufferWriter<byte> writer = new();
         Write(writer);
     }
     
-    [Benchmark(Description = "RecyclableMemoryStream")]
+    [Benchmark(Description = "MS RecyclableMemoryStream")]
     public void WriteToRecyclableMemoryStream()
     {
         using var ms = manager.GetStream();

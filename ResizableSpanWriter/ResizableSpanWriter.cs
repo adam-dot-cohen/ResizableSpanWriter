@@ -9,7 +9,7 @@ namespace ResizableSpanWriter;
 /// </summary>
 /// <typeparam name="T">The type of items to write to the current instance.</typeparam>
 /// <remarks>
-public class ResizableSpanWriter<T>
+public class ResizableSpanWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 {
     /// <summary>
     /// The default size to use to expand the buffer.
@@ -36,6 +36,11 @@ public class ResizableSpanWriter<T>
     /// The current position of the writer.
     /// </summary>
     private int _index;
+
+    /// <summary>
+    /// The disposed state of the buffer.
+    /// </summary>
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResizableSpanWriter{T}"/> class.
@@ -69,6 +74,7 @@ public class ResizableSpanWriter<T>
         this._buffer = _array = ArrayPool<T>.Shared.Rent(growthGrowthIncrement);
         this._growthIncrement = growthGrowthIncrement;
         this._index = 0;
+        this._disposed = false;
     }
 
     /// <summary>
@@ -94,16 +100,56 @@ public class ResizableSpanWriter<T>
             return this._buffer.Span.Slice(0, _index);
         }
     }
+
+    /// <inheritdoc />
+    Memory<T> IMemoryOwner<T>.Memory => this._buffer;
     
+    /// <inheritdoc />
+    public void Advance(int count)
+    {
+        if(_index + count <= _buffer.Span.Length)
+            Grow(count);
+
+        _index += count;
+    }
+
+    /// <inheritdoc />
+    public Memory<T> GetMemory(int sizeHint = 0)
+    {
+        if (sizeHint == 0)
+            sizeHint = 8;
+        
+        Grow(sizeHint);
+
+        var slcIndex =_index;
+        
+        _index += sizeHint;
+
+        return _buffer.Slice(slcIndex, sizeHint);
+    }
+
+    /// <inheritdoc />
+    public Span<T> GetSpan(int sizeHint = 0)
+    {
+        if (sizeHint == 0)
+            sizeHint = 8;
+        
+        Grow(sizeHint);
+
+        var slcIndex =_index;
+        
+        _index += sizeHint;
+
+        return _buffer.Span.Slice(slcIndex, sizeHint);
+    }
+
     /// <summary>
     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
     /// </summary>
     /// <param name="items">A <see cref="Span{T}"/> of items to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(Span<T> items)
-    {
-        Copy(items);
-    }
+        => Copy(items);
 
     /// <summary>
     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
@@ -111,9 +157,7 @@ public class ResizableSpanWriter<T>
     /// <param name="items">Array of items to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(T[] items)
-    {
-        Copy(items);
-    }
+        => Copy(items);
 
     /// <summary>
     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
@@ -121,9 +165,7 @@ public class ResizableSpanWriter<T>
     /// <param name="items">A <see cref="Memory{T}"/> of items to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(Memory<T> items)
-    {
-        Copy(items.Span);
-    }
+        => Copy(items.Span);
 
     /// <summary>
     /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
@@ -131,15 +173,13 @@ public class ResizableSpanWriter<T>
     /// <param name="item"> Item <see cref="T"/> to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(T item)
-    {
-        Copy(item);
-    }
+        => Copy(item);
 
-    /// <summary>
-    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
-    /// </summary>
-    /// <param name="items">Pointer of items, which must be pinned/fixed.</param>
-    /// <param name="length">The length of the pointer</param>
+    ///// <summary>
+    ///// Appends to the end of the buffer, automatically growing the buffer if necessary.
+    ///// </summary>
+    ///// <param name="items">Pointer of items, which must be pinned/fixed.</param>
+    ///// <param name="length">The length of the pointer</param>
     //[MethodImpl(MethodImplOptions.AggressiveInlining)]
     //public unsafe void Write(T* items, int length)
     //{
@@ -230,8 +270,16 @@ public class ResizableSpanWriter<T>
 
         var slc = _buffer.Span.Slice(_index, 1);
 
-        _index += 1;
-
         slc[0] = item;
+
+        _index += 1;
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        ArrayPool<T>.Shared.Return(_array);
+
+        _buffer = null;
     }
 }
