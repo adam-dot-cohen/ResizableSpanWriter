@@ -25,7 +25,7 @@ for (int i = 0; i < cnt; i++)
 	span[i] = i;
 }
 
-//3. READ FROM - WRITTENSPAN OR WRITTENMEMORY
+//3. READ FROM - `WrittenSpan` OR `WrittenMemory`
 Console.WriteLine(writer.WrittenSpan.SequenceEqual(span));
 
 //4. ALTERNATIVELIY - WRITE ARRAYS, SPANS, MEMORY
