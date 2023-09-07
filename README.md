@@ -35,26 +35,31 @@ Intel Core i9-10980XE CPU 3.00GHz, 1 CPU, 36 logical and 18 physical cores
   [Host]     : .NET 7.0.1 (6.0.121.56705), X64 RyuJIT
   Job-XTVWKK : .NET 7.0.1 (6.0.121.56705), X64 RyuJIT
 
-|                              Method | TotalCount |       Mean |     Error | Allocated |
-|------------------------------------ |----------- |-----------:|----------:|----------:|
-|      'Proposed ResizableSpanWriter' |        100 |   1.974 us | 0.0547 us |     992 B |
-| 'High Perf Toolkit ArrayPoolWriter' |        100 |   2.201 us | 0.0577 us |    1104 B |
-|         'MS RecyclableMemoryStream' |        100 |   5.800 us | 0.1931 us |     872 B |
-|        'DotNext SparseBufferWriter' |        100 |   6.527 us | 0.1759 us |    1160 B |
-|      'Proposed ResizableSpanWriter' |       1000 |   2.691 us | 0.0596 us |     992 B |
-| 'High Perf Toolkit ArrayPoolWriter' |       1000 |   2.496 us | 0.0535 us |    2168 B |
-|         'MS RecyclableMemoryStream' |       1000 |   6.464 us | 0.2420 us |     872 B |
-|        'DotNext SparseBufferWriter' |       1000 |   7.991 us | 0.2731 us |    1160 B |
-|      'Proposed ResizableSpanWriter' |      10000 |   6.160 us | 0.1251 us |     992 B |
-| 'High Perf Toolkit ArrayPoolWriter' |      10000 |   6.444 us | 0.1349 us |   12872 B |
-|         'MS RecyclableMemoryStream' |      10000 |  11.476 us | 0.2429 us |     872 B |
-|        'DotNext SparseBufferWriter' |      10000 |  12.894 us | 0.2579 us |    1336 B |
-|      'Proposed ResizableSpanWriter' |     100000 |  34.300 us | 0.4911 us |     992 B |
-| 'High Perf Toolkit ArrayPoolWriter' |     100000 |  37.429 us | 0.7096 us |  119744 B |
-|         'MS RecyclableMemoryStream' |     100000 |  57.658 us | 0.3517 us |     872 B |
-|        'DotNext SparseBufferWriter' |     100000 |  56.562 us | 0.8860 us |    3272 B |
-|      'Proposed ResizableSpanWriter' |    1000000 | 143.571 us | 2.7542 us |     992 B |
-| 'High Perf Toolkit ArrayPoolWriter' |    1000000 | 178.754 us | 0.9023 us | 1188488 B |
-|         'MS RecyclableMemoryStream' |    1000000 | 523.529 us | 3.2797 us |    1504 B |
-|        'DotNext SparseBufferWriter' |    1000000 | 553.662 us | 5.8670 us |   22632 B |
+|                              Method | TotalCount |       Mean |      Error | Allocated |
+|------------------------------------ |----------- |-----------:|-----------:|----------:|
+|         'Proposed SpanBufferWriter' |        100 |   2.245 us |  0.1280 us |     992 B |
+| 'High Perf Toolkit ArrayPoolWriter' |        100 |   2.397 us |  0.1303 us |    1104 B |
+|                         'MS Stream' |        100 |   2.127 us |  0.1010 us |     944 B |
+|         'MS RecyclableMemoryStream' |        100 |   5.812 us |  0.2283 us |     872 B |
+|        'DotNext SparseBufferWriter' |        100 |   6.462 us |  0.2818 us |    4944 B |
+|         'Proposed SpanBufferWriter' |       1000 |   2.933 us |  0.1332 us |     992 B |
+| 'High Perf Toolkit ArrayPoolWriter' |       1000 |   2.866 us |  0.1295 us |    2168 B |
+|                         'MS Stream' |       1000 |   2.450 us |  0.1315 us |    2528 B |
+|         'MS RecyclableMemoryStream' |       1000 |   6.870 us |  0.2566 us |     872 B |
+|        'DotNext SparseBufferWriter' |       1000 |   7.088 us |  0.2757 us |    4944 B |
+|         'Proposed SpanBufferWriter' |      10000 |   6.397 us |  0.2110 us |     992 B |
+| 'High Perf Toolkit ArrayPoolWriter' |      10000 |   6.539 us |  0.1647 us |   12872 B |
+|                         'MS Stream' |      10000 |   5.838 us |  0.2019 us |   33344 B |
+|         'MS RecyclableMemoryStream' |      10000 |  11.617 us |  0.3087 us |     872 B |
+|        'DotNext SparseBufferWriter' |      10000 |  12.560 us |  0.3530 us |   13360 B |
+|         'Proposed SpanBufferWriter' |     100000 |  35.873 us |  1.0234 us |     992 B |
+| 'High Perf Toolkit ArrayPoolWriter' |     100000 |  39.679 us |  0.7934 us |  119744 B |
+|                         'MS Stream' |     100000 |  31.985 us |  1.6602 us |  262792 B |
+|         'MS RecyclableMemoryStream' |     100000 |  59.855 us |  1.1866 us |     872 B |
+|        'DotNext SparseBufferWriter' |     100000 |  57.376 us |  1.1503 us |  105936 B |
+|         'Proposed SpanBufferWriter' |    1000000 | 147.532 us |  3.0570 us |     992 B |
+| 'High Perf Toolkit ArrayPoolWriter' |    1000000 | 181.525 us |  2.5005 us | 1188488 B |
+|                         'MS Stream' |    1000000 | 619.653 us | 21.9352 us | 2097872 B |
+|         'MS RecyclableMemoryStream' |    1000000 | 521.721 us |  3.4314 us |    1504 B |
+|        'DotNext SparseBufferWriter' |    1000000 | 472.577 us |  7.5930 us | 1031696 B |
 ```
