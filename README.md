@@ -2,7 +2,7 @@
 ![]()
 [![NuGet version (ResizableSpanWriter)](https://img.shields.io/badge/nuget-v1.0.1-blue?style=flat-square)](https://www.nuget.org/packages/ResizableSpanWriter/)
 
-High-performance writer for creating Span<T> and Memory<T> structures that outperforms MemoryStream, RecyclableMemoryStream and ArrayPoolBufferWriter (MS High Performance Toolkit).
+High-performance, low-allocation, heap-based convience type for constructing Span<T> and Memory<T> structures without specifying size - implementing IBufferWriter<T> / IMemoryOwner<T>.   Better performance and efficiently than alternatives such as MemoryStream, RecyclableMemoryStream and ArrayPoolBufferWriter (MS High Performance Toolkit).
 
 # Example Usage
 ```csharp
@@ -12,24 +12,18 @@ var cnt = 2000;
 //1. INSTANTIATE
 var writer = new ResizableSpanWriter<int>();
 
-// normal span for illustrative purposes and checksum below
-Span<int> span = new int[cnt];
-
-//2. WRITE SINGLE ENTRIES - SEE #4 BELOW FOR ARRAYS...
+//2. Write single entries
 for (int i = 0; i < cnt; i++)
 {
 	// write to ResizableSpanWriter
 	writer.Write(i);
-
-	// write to Span
-	span[i] = i;
 }
 
-//3. READ FROM - `WrittenSpan` OR `WrittenMemory`
-Console.WriteLine(writer.WrittenSpan.SequenceEqual(span));
-
-//4. ALTERNATIVELIY - WRITE ARRAYS, SPANS, MEMORY
+//3. Write array, span or memory...
 writer.Write(span);
+
+//4. Read contents from - `WrittenSpan` OR `WrittenMemory`
+Console.WriteLine(writer.WrittenSpan.SequenceEqual(span));
 ```
 ## Benchmarks
 Benchmarks performed using BenchmarkDotNet...
@@ -38,8 +32,8 @@ Benchmarks performed using BenchmarkDotNet...
 BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19044.1415 (21H2)
 Intel Core i9-10980XE CPU 3.00GHz, 1 CPU, 36 logical and 18 physical cores
 .NET SDK=6.0.101
-  [Host]     : .NET 6.0.1 (6.0.121.56705), X64 RyuJIT
-  Job-XTVWKK : .NET 6.0.1 (6.0.121.56705), X64 RyuJIT
+  [Host]     : .NET 7.0.1 (6.0.121.56705), X64 RyuJIT
+  Job-XTVWKK : .NET 7.0.1 (6.0.121.56705), X64 RyuJIT
 
 |                              Method | TotalCount |       Mean |     Error | Allocated |
 |------------------------------------ |----------- |-----------:|----------:|----------:|
@@ -64,6 +58,3 @@ Intel Core i9-10980XE CPU 3.00GHz, 1 CPU, 36 logical and 18 physical cores
 |         'MS RecyclableMemoryStream' |    1000000 | 523.529 us | 3.2797 us |    1504 B |
 |        'DotNext SparseBufferWriter' |    1000000 | 553.662 us | 5.8670 us |   22632 B |
 ```
-    
-## Feedback, Suggestions and Contributions
-Are all welcome!
