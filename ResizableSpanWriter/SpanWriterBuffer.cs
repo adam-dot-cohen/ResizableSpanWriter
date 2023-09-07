@@ -9,7 +9,7 @@ namespace ResizableSpanWriter;
 /// </summary>
 /// <typeparam name="T">The type of items to write to the current instance.</typeparam>
 /// <remarks>
-public class ResizableSpanWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
+public class SpanBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 {
     /// <summary>
     /// The default size to use to expand the buffer.
@@ -43,30 +43,30 @@ public class ResizableSpanWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ResizableSpanWriter{T}"/> class.
+    /// Initializes a new instance of the <see cref="SpanBufferWriter{T}"/> class.
     /// </summary>
-    public ResizableSpanWriter()
+    public SpanBufferWriter()
         : this(ArrayPool<T>.Shared, DefaultGrowthIncrement)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ResizableSpanWriter{T}"/> class.
+    /// Initializes a new instance of the <see cref="SpanBufferWriter{T}"/> class.
     /// </summary>
     /// <param name="growthIncrement">The incremental size to grow the buffer.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="growthIncrement"/> is not valid.</exception>
-    public ResizableSpanWriter(int growthIncrement)
+    public SpanBufferWriter(int growthIncrement)
         : this(ArrayPool<T>.Shared, growthIncrement)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ArrayPoolBufferWriter{T}"/> class.
+    /// Initializes a new instance of the <see cref="SpanBufferWriter{T}"/> class.
     /// </summary>
     /// <param name="pool">The <see cref="ArrayPool{T}"/> instance to use.</param>
     /// <param name="initialCapacity">The minimum capacity with which to initialize the underlying buffer.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="growthGrowthIncrement"/> is not valid.</exception>
-    public ResizableSpanWriter(ArrayPool<T> pool, int growthGrowthIncrement)
+    public SpanBufferWriter(ArrayPool<T> pool, int growthGrowthIncrement)
     {
         if (growthGrowthIncrement < 1)
             throw new ArgumentOutOfRangeException("The growth increment parameter bust be greater than 0");
@@ -175,22 +175,6 @@ public class ResizableSpanWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     public void Write(T item)
         => this.Copy(item);
 
-    ///// <summary>
-    ///// Appends to the end of the buffer, automatically growing the buffer if necessary.
-    ///// </summary>
-    ///// <param name="items">Pointer of items, which must be pinned/fixed.</param>
-    ///// <param name="length">The length of the pointer</param>
-    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    //public unsafe void Write(T* items, int length)
-    //{
-    //   Grow(length);
-
-    //    for (var i = 0; i < length; i++)
-    //    {
-    //        slice[i] = items[i];
-    //    }
-    //}
-
     /// <summary>
     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
     /// </summary>
@@ -248,14 +232,6 @@ public class ResizableSpanWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
         items.CopyTo(slc);
 
 		this._index += items.Length;
-       
-        //unsafe
-        //{
-        //    fixed (T* ptr = slc, ptrSrc = items)
-        //    {
-        //        Unsafe.CopyBlockUnaligned(ptr, ptrSrc, (uint)items.Length);
-        //    }
-        //}
 
     }
     /// <summary>

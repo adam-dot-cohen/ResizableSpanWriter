@@ -27,11 +27,11 @@ public class ChampionChallengerBenchmarks
     [Params(100, 1_000, 10_000, 100_000, 1_000_000)]
     public int TotalCount;
 
-    [Benchmark(Description = "Proposed ResizableSpanWriter")]
-    public void ResizableSpanByte()
+    [Benchmark(Description = "Proposed SpanBufferWriter")]
+    public void SpanBufferWriter()
     {
         var i = sizeof(int);
-        using var writer = new ResizableSpanWriter<byte>();
+        using var writer = new SpanBufferWriter<byte>();
 		this.Write(writer);
     }
 
@@ -41,7 +41,13 @@ public class ChampionChallengerBenchmarks
         using ArrayPoolBufferWriter<byte> writer = new();
 		this.Write(writer);
     }
-    
+
+    [Benchmark(Description = "MS Stream")]
+    public void WriteToStream(){
+	    using var ms = new MemoryStream();
+	    this.Write(ms);
+    }
+
     [Benchmark(Description = "MS RecyclableMemoryStream")]
     public void WriteToRecyclableMemoryStream()
     {
@@ -51,7 +57,7 @@ public class ChampionChallengerBenchmarks
     [Benchmark(Description = "DotNext SparseBufferWriter")]
     public void SparseBufferWriter()
     {
-	    using var ms = new SparseBufferWriter<byte>();
+	    var ms = new SparseBufferWriter<byte>();
 	    this.Write(ms);
     }
     private void Write(Stream output)
@@ -72,7 +78,7 @@ public class ChampionChallengerBenchmarks
 			this.chunk[..taken].CopyTo(span);
         }
     }
-    private void Write(ResizableSpanWriter<byte> output)
+    private void Write(SpanBufferWriter<byte> output)
     {
         for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
         {
