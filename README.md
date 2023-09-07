@@ -10,12 +10,12 @@ High-performance, low-allocation, heap-based convience type for constructing Spa
 var cnt = 2000;
 
 //1. INSTANTIATE
-var writer = new ResizableSpanWriter<int>();
+var writer = new SpanBufferWriter<int>();
 
 //2. Write single entries
 for (int i = 0; i < cnt; i++)
 {
-	// write to ResizableSpanWriter
+	// write to SpanBufferWriter
 	writer.Write(i);
 }
 
