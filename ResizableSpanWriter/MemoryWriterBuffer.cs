@@ -2,19 +2,19 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace ResizableSpanWriter;
+namespace System.Buffers;
 
 /// <summary>
 /// Represents a heap-based, array-backed output sink into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of items to write to the current instance.</typeparam>
 /// <remarks>
-public class SpanBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
+public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 {
     /// <summary>
     /// The default size to use to expand the buffer.
     /// </summary>
-    private const int DefaultGrowthIncrement = 256;
+    private const int DefaultGrowthIncrement = 512;
 
     /// <summary>
     /// Array on current rental from the array pool.  Reference to the same memory as <see cref="_buffer"/>.
@@ -43,30 +43,30 @@ public class SpanBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SpanBufferWriter{T}"/> class.
+    /// Initializes a new instance of the <see cref="MemoryBufferWriter{T}"/> class.
     /// </summary>
-    public SpanBufferWriter()
+    public MemoryBufferWriter()
         : this(ArrayPool<T>.Shared, DefaultGrowthIncrement)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SpanBufferWriter{T}"/> class.
+    /// Initializes a new instance of the <see cref="MemoryBufferWriter{T}"/> class.
     /// </summary>
     /// <param name="growthIncrement">The incremental size to grow the buffer.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="growthIncrement"/> is not valid.</exception>
-    public SpanBufferWriter(int growthIncrement)
+    public MemoryBufferWriter(int growthIncrement)
         : this(ArrayPool<T>.Shared, growthIncrement)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SpanBufferWriter{T}"/> class.
+    /// Initializes a new instance of the <see cref="MemoryBufferWriter{T}"/> class.
     /// </summary>
     /// <param name="pool">The <see cref="ArrayPool{T}"/> instance to use.</param>
     /// <param name="initialCapacity">The minimum capacity with which to initialize the underlying buffer.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="growthGrowthIncrement"/> is not valid.</exception>
-    public SpanBufferWriter(ArrayPool<T> pool, int growthGrowthIncrement)
+    public MemoryBufferWriter(ArrayPool<T> pool, int growthGrowthIncrement)
     {
         if (growthGrowthIncrement < 1)
             throw new ArgumentOutOfRangeException("The growth increment parameter bust be greater than 0");

@@ -78,7 +78,7 @@ public class ChampionChallengerBenchmarks
 			this.chunk[..taken].CopyTo(span);
         }
     }
-    private void Write(SpanBufferWriter<byte> output)
+    private void Write(SpanWriter<byte> output)
     {
         for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
         {

@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace ResizableSpanWriter.Tests;
 
 public class ResizableSpanWriterTests
@@ -11,7 +13,7 @@ public class ResizableSpanWriterTests
     public void Should_write_single_items_equal_to_span()
     {
         var cnt = 1000;
-        var writer = new SpanBufferWriter<int>(5);
+        var writer = new MemoryBufferWriter<int>(5);
         Span<int> shouldEqual = new int[cnt];
 	
         for (int i = 0; i < cnt; i++)
@@ -27,7 +29,7 @@ public class ResizableSpanWriterTests
     public void Should_write_array_sequences_equal_to_span()
     {
         var cnt = 1000;
-        var writer = new SpanBufferWriter<int>(5);
+        var writer = new MemoryBufferWriter<int>(5);
         Span<int> shouldEqual = new int[cnt];
 	
         for (int i = 0; i < cnt; i++)
@@ -46,7 +48,7 @@ public class ResizableSpanWriterTests
     public void Should_write_span_sequences_equal_to_span()
     {
         var cnt = 1000;
-        var writer = new SpanBufferWriter<int>(5);
+        var writer = new MemoryBufferWriter<int>(5);
         Span<int> shouldEqual = new int[cnt];
 	
         for (int i = 0; i < cnt; i++)
@@ -65,7 +67,7 @@ public class ResizableSpanWriterTests
     public void Should_write_memory_sequences_equal_to_span()
     {
         var cnt = 1000;
-        var writer = new SpanBufferWriter<int>(5);
+        var writer = new MemoryBufferWriter<int>(5);
         Span<int> shouldEqual = new int[cnt];
 	
         for (int i = 0; i < cnt; i++)
@@ -85,7 +87,7 @@ public class ResizableSpanWriterTests
     public void Should_advance_equal_to_span()
     {
         var cnt = 1000;
-        var writer = new SpanBufferWriter<int>(5);
+        var writer = new MemoryBufferWriter<int>(5);
         Span<int> shouldEqual = new int[cnt];
 
         int skipIndex = 0,skipCount = 10;
