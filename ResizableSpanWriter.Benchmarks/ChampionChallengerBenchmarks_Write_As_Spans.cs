@@ -6,6 +6,7 @@ using BenchmarkDotNet.Running;
 using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.IO;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,13 +14,14 @@ using System.Text;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Columns;
 using DotNext.Buffers;
+using DotNext.Collections.Generic;
 
 namespace ResizableSpanWriter.Benchmarks;
 [SimpleJob(runStrategy: RunStrategy.Throughput, launchCount: 1, invocationCount: 1, runtimeMoniker: RuntimeMoniker.Net70)]
 
 [HideColumns(Column.StdDev, Column.Median, Column.RatioSD)]
 [MemoryDiagnoser]
-public class ChampionChallengerBenchmarks
+public class ChampionChallengerBenchmarks_Write_As_Spans
 {
     private static readonly RecyclableMemoryStreamManager manager = new();
     private readonly byte[] chunk = new byte[128];
@@ -27,11 +29,10 @@ public class ChampionChallengerBenchmarks
     [Params(100, 1_000, 10_000, 100_000, 1_000_000)]
     public int TotalCount;
 
-    [Benchmark(Description = "Proposed SpanBufferWriter")]
+    [Benchmark(Description = "Proposed MemoryBufferWriter", Baseline = true)]
     public void SpanBufferWriter()
     {
-        var i = sizeof(int);
-        using var writer = new SpanBufferWriter<byte>();
+        using var writer = new System.Buffers.MemoryBufferWriter<byte>();
 		this.Write(writer);
     }
 
@@ -42,9 +43,11 @@ public class ChampionChallengerBenchmarks
 		this.Write(writer);
     }
 
-    [Benchmark(Description = "MS Stream")]
-    public void WriteToStream(){
-	    using var ms = new MemoryStream();
+	
+    [Benchmark(Description = "DotNext PooledBufferWriter")]
+    public void SparseBufferWriter()
+    {
+	    var ms = new PooledBufferWriter<byte>();
 	    this.Write(ms);
     }
 
@@ -54,44 +57,51 @@ public class ChampionChallengerBenchmarks
         using var ms = manager.GetStream();
 		this.Write(ms);
     }
-    [Benchmark(Description = "DotNext SparseBufferWriter")]
-    public void SparseBufferWriter()
-    {
-	    var ms = new SparseBufferWriter<byte>();
-	    this.Write(ms);
-    }
+
     private void Write(Stream output)
     {
-        for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
-        {
+		
+	    Span<byte> bytes = stackalloc byte[this.chunk.Length];
+		bytes = this.chunk;
+	    for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
+	    {
             taken = Math.Min(remaining, this.chunk.Length);
-            output.Write(this.chunk, 0, taken);
+            output.Write(bytes[taken..]);
         }
     }
 
     private unsafe void Write(ArrayPoolBufferWriter<byte> output)
-    {
+    {  
+	    Span<byte> bytes = stackalloc byte[this.chunk.Length];
+	    bytes = this.chunk;
         for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
         {
             taken = Math.Min(remaining, this.chunk.Length);
             var span = output.GetSpan(taken);
-			this.chunk[..taken].CopyTo(span);
+			bytes[taken..].CopyTo(span);
+			output.Advance(taken);
         }
     }
-    private void Write(SpanWriter<byte> output)
+
+    private void Write(System.Buffers.MemoryBufferWriter<byte> output)
     {
+	    Span<byte> bytes = stackalloc byte[this.chunk.Length];
+	    bytes = this.chunk;
         for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
         {
             taken = Math.Min(remaining, this.chunk.Length);
-            output.Write(this.chunk);
+            output.Write(bytes[taken..]);
         }
     }
-    private void Write(SparseBufferWriter<byte> output)
+
+    private void Write(PooledBufferWriter<byte> output)
     {
+	    Span<byte> bytes = stackalloc byte[this.chunk.Length];
+	    bytes = this.chunk;
 	    for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
 	    {
 		    taken = Math.Min(remaining, this.chunk.Length);
-		    output.Write(this.chunk);
+			output.Write(bytes[taken..]);
 	    }
     }
 }

@@ -14,7 +14,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <summary>
     /// The default size to use to expand the buffer.
     /// </summary>
-    private const int DefaultGrowthIncrement = 512;
+    private const int DefaultGrowthIncrement = (2 << 5);
 
     /// <summary>
     /// Array on current rental from the array pool.  Reference to the same memory as <see cref="_buffer"/>.
@@ -154,18 +154,11 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <summary>
     /// Appends to the end of the buffer, automatically growing the buffer if necessary.
     /// </summary>
-    /// <param name="items">Array of items to append.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Write(T[] items)
-        => this.Copy(items);
-
-    /// <summary>
-    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
-    /// </summary>
     /// <param name="items">A <see cref="Memory{T}"/> of items to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(Memory<T> items)
         => this.Copy(items.Span);
+
 
     /// <summary>
     /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
@@ -208,7 +201,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     {
         if (this._index + length <= this._buffer.Span.Length) return;
 
-        var next = ArrayPool<T>.Shared.Rent(Math.Max(this._index + this._growthIncrement, this._index + length));
+        T[] next = ArrayPool<T>.Shared.Rent(Math.Max(this._index + this._growthIncrement, this._index + length));
 
 		this._buffer.Span.CopyTo(next);
 
