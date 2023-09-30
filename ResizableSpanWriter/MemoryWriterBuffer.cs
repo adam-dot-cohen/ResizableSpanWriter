@@ -14,7 +14,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <summary>
     /// The default size to use to expand the buffer.
     /// </summary>
-    private const int DefaultGrowthIncrement = (2 << 5);
+    private const int DefaultGrowthMultiple = 2;
 
     /// <summary>
     /// Array on current rental from the array pool.  Reference to the same memory as <see cref="_buffer"/>.
@@ -22,10 +22,9 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     private T[] _array;
 
     /// <summary>
-    /// The increment to use to grow the writer.
+    /// The <see cref="ArrayPool{T}"/> instance used to rent <see cref="array"/>.
     /// </summary>
-    /// 
-    private readonly int _growthIncrement;
+    private ArrayPool<T> _pool;
 
     /// <summary>
     /// The <see cref="ArrayPool{T}"/> instance used to rent <see cref="array"/>.
@@ -46,17 +45,17 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// Initializes a new instance of the <see cref="MemoryBufferWriter{T}"/> class.
     /// </summary>
     public MemoryBufferWriter()
-        : this(ArrayPool<T>.Shared, DefaultGrowthIncrement)
+        : this(ArrayPool<T>.Shared)
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MemoryBufferWriter{T}"/> class.
     /// </summary>
-    /// <param name="growthIncrement">The incremental size to grow the buffer.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="growthIncrement"/> is not valid.</exception>
-    public MemoryBufferWriter(int growthIncrement)
-        : this(ArrayPool<T>.Shared, growthIncrement)
+    /// <param name="initialCapacity">The incremental size to grow the buffer.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="initialCapacity"/> is not valid.</exception>
+    public MemoryBufferWriter(int initialCapacity = 1)
+        : this(ArrayPool<T>.Shared, initialCapacity)
     {
     }
 
@@ -65,16 +64,20 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// </summary>
     /// <param name="pool">The <see cref="ArrayPool{T}"/> instance to use.</param>
     /// <param name="initialCapacity">The minimum capacity with which to initialize the underlying buffer.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="growthGrowthIncrement"/> is not valid.</exception>
-    public MemoryBufferWriter(ArrayPool<T> pool, int growthGrowthIncrement)
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="initialCapacity"/> is not valid.</exception>
+    public MemoryBufferWriter(ArrayPool<T> pool, int initialCapacity = 1)
     {
-        if (growthGrowthIncrement < 1)
+        if (initialCapacity < 0)
             throw new ArgumentOutOfRangeException("The growth increment parameter bust be greater than 0");
 
-        this._buffer = this._array = ArrayPool<T>.Shared.Rent(growthGrowthIncrement);
-        this._growthIncrement = growthGrowthIncrement;
+		this._pool = pool;
         this._index = 0;
         this._disposed = false;
+
+        if (initialCapacity > 0)
+        {
+	        this._buffer = this._array = this._pool.Rent(initialCapacity);
+        }
     }
 
     /// <summary>
@@ -85,6 +88,8 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
+			this.ThrowIfDisposed();
+
             return this._buffer.Slice(0, this._index);
         }
     }
@@ -97,6 +102,8 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
+	        this.ThrowIfDisposed();
+
             return this._buffer.Span.Slice(0, this._index);
         }
     }
@@ -107,7 +114,9 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <inheritdoc />
     public void Advance(int count)
     {
-        if(this._index + count <= this._buffer.Span.Length)
+	    this.ThrowIfDisposed();
+
+        if(checked(this._index + count) <= this._buffer.Span.Length)
 			this.Grow(count);
 
 		this._index += count;
@@ -116,6 +125,8 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <inheritdoc />
     public Memory<T> GetMemory(int sizeHint = 0)
     {
+	    this.ThrowIfDisposed();
+
         if (sizeHint == 0)
             sizeHint = 8;
 
@@ -123,7 +134,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 
         var slcIndex = this._index;
 
-		this._index += sizeHint;
+        this._index += sizeHint;
 
         return this._buffer.Slice(slcIndex, sizeHint);
     }
@@ -131,6 +142,8 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <inheritdoc />
     public Span<T> GetSpan(int sizeHint = 0)
     {
+	    this.ThrowIfDisposed();
+
         if (sizeHint == 0)
             sizeHint = 8;
 
@@ -138,7 +151,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 
         var slcIndex = this._index;
 
-		this._index += sizeHint;
+        this._index += sizeHint;
 
         return this._buffer.Span.Slice(slcIndex, sizeHint);
     }
@@ -169,45 +182,39 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
         => this.Copy(item);
 
     /// <summary>
-    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
-    /// </summary>
-    /// <param name="items">A <see cref="Span{T}"/> of items to append.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ValueTask WriteAsync(Memory<T> items)
-    {
-		this.Copy(items.Span);
-
-        return ValueTask.CompletedTask;
-    }
-
-    /// <summary>
-    /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
-    /// </summary>
-    /// <param name="items">A <see cref="Span{T}"/> of items to append.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ValueTask WriteAsync(T item)
-    {
-		this.Copy(item);
-
-        return ValueTask.CompletedTask;
-    }
-
-    /// <summary>
     /// Grows the buffer if needed.
     /// </summary>
     /// <param name="length"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Grow(int length)
     {
-        if (this._index + length <= this._buffer.Span.Length) return;
+	    this.ThrowIfDisposed();
 
-        T[] next = ArrayPool<T>.Shared.Rent(Math.Max(this._index + this._growthIncrement, this._index + length));
+		var indexAfter = checked(this._index + length);
+
+	    if (indexAfter <= this._buffer.Span.Length) return;
+
+	    T[] next = this._pool.Rent(this.GetNewCapacity(indexAfter));
 
 		this._buffer.Span.CopyTo(next);
 
-        ArrayPool<T>.Shared.Return(this._array);
+        this._pool.Return(this._array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
 
 		this._buffer = this._array = next;
+    }
+
+    /// <summary>
+    /// Gets the length to growth the buffer
+    /// </summary>
+    /// <param name="length"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int GetNewCapacity(int length)
+    {
+	    var optimal = (long)this._buffer.Span.Length * DefaultGrowthMultiple;
+
+	    if (optimal > int.MaxValue) optimal = int.MaxValue;
+
+	    return (int) Math.Max(optimal, length);
     }
 
     /// <summary>
@@ -218,7 +225,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Copy(Span<T> items)
     {
-		this.Grow(items.Length);
+	    this.Grow(items.Length);
 
         var slc = this._buffer.Span.Slice(this._index, items.Length);
 
@@ -247,8 +254,18 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     /// <inheritdoc />
     public void Dispose()
     {
-        ArrayPool<T>.Shared.Return(this._array);
+	    if (this._disposed) return;
 
-		this._buffer = null;
+	    if (this._array != null)
+	    {
+		    this._pool.Return(this._array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+	    }
+
+	    this._buffer = null;
+    }
+
+    public void ThrowIfDisposed()
+    {
+	    if (this._disposed) throw new ObjectDisposedException("The buffer has been disposed.");
     }
 }

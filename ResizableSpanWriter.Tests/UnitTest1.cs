@@ -78,7 +78,7 @@ public class ResizableSpanWriterTests
             
             ii.Span.CopyTo(slc);
 
-            writer.WriteAsync(ii);
+            writer.Write(ii);
         }
         Assert.True(writer.WrittenSpan.SequenceEqual(shouldEqual));
     }
@@ -101,7 +101,7 @@ public class ResizableSpanWriterTests
             if (!(skipCount + skipIndex > i && skipIndex <= i))
             {
                 ii.Span.CopyTo(slc);
-                writer.WriteAsync(ii);
+                writer.Write(ii);
             }
             if(skipIndex == i)
                 writer.Advance(skipCount);

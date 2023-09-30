@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResizableSpanWriter.Benchma
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResizableSpanWriter", "ResizableSpanWriter\ResizableSpanWriter.csproj", "{44320192-C812-4FE7-A088-FC42CEC6BD47}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResizableSpanWriter.Tests", "ResizableSpanWriter.Tests\ResizableSpanWriter.Tests.csproj", "{AC67B77A-9E54-458D-80EC-C9F04900F811}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResizableSpanWriter.Tests", "ResizableSpanWriter.Tests\ResizableSpanWriter.Tests.csproj", "{AC67B77A-9E54-458D-80EC-C9F04900F811}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D5972DC9-C8E6-459F-8345-EBB18DC7E351}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

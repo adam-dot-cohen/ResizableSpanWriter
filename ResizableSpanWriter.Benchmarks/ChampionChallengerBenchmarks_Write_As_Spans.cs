@@ -45,9 +45,16 @@ public class ChampionChallengerBenchmarks_Write_As_Spans
 
 	
     [Benchmark(Description = "DotNext PooledBufferWriter")]
-    public void SparseBufferWriter()
+    public void PooledBufferWriter()
     {
 	    var ms = new PooledBufferWriter<byte>();
+	    this.Write(ms);
+    }
+
+    [Benchmark(Description = "DotNext PooledArrayBufferWriter")]
+    public void PooledArrayBufferWriter()
+    {
+	    var ms = new PooledArrayBufferWriter<byte>();
 	    this.Write(ms);
     }
 
@@ -92,6 +99,17 @@ public class ChampionChallengerBenchmarks_Write_As_Spans
             taken = Math.Min(remaining, this.chunk.Length);
             output.Write(bytes[taken..]);
         }
+    }
+
+    private void Write(PooledArrayBufferWriter<byte> output)
+    {
+	    Span<byte> bytes = stackalloc byte[this.chunk.Length];
+	    bytes = this.chunk;
+	    for (int remaining = this.TotalCount, taken; remaining > 0; remaining -= taken)
+	    {
+		    taken = Math.Min(remaining, this.chunk.Length);
+		    output.Write(bytes[taken..]);
+	    }
     }
 
     private void Write(PooledBufferWriter<byte> output)
