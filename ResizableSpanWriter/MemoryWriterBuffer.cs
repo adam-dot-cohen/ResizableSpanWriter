@@ -172,6 +172,22 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     public void Write(Memory<T> items)
         => this.Copy(items.Span);
 
+    /// <summary>
+    /// Appends to the end of the buffer, automatically growing the buffer if necessary.
+    /// </summary>
+    /// <param name="items">A <see cref="Memory{T}"/> of items to append.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(T[] items)
+    {
+	    unsafe
+	    {
+		    fixed (T* item = &items[0])
+			    
+			    this.Copy(new Span<T>(item, items.Length));
+		    
+	    }
+    }
+
 
     /// <summary>
     /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
