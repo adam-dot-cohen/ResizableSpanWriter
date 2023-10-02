@@ -78,6 +78,8 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
         {
 	        this._buffer = this._array = this._pool.Rent(initialCapacity);
         }
+
+        new Memory<T>(this._array);
     }
 
     /// <summary>
@@ -181,13 +183,12 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
     {
 	    unsafe
 	    {
-		    fixed (T* item = &items[0])
+		    fixed (T* item = items)
 			    
 			    this.Copy(new Span<T>(item, items.Length));
 		    
 	    }
     }
-
 
     /// <summary>
     /// Appends a single item to the end of the buffer, automatically growing the buffer if necessary.
@@ -250,6 +251,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 		this._index += items.Length;
 
     }
+
     /// <summary>
     /// Returns a slice of the underlying buffer
     /// </summary>

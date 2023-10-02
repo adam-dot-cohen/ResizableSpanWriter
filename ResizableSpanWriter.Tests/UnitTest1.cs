@@ -82,7 +82,6 @@ public class ResizableSpanWriterTests
         }
         Assert.True(writer.WrittenSpan.SequenceEqual(shouldEqual));
     }
-
     [Test]
     public void Should_advance_equal_to_span()
     {
