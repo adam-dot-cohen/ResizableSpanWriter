@@ -15,11 +15,6 @@ namespace System.Buffers;
 public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 {
 	/// <summary>
-	/// The default size to use to expand the buffer.
-	/// </summary>
-	private const int DefaultGrowthMultiple = 2;
-
-	/// <summary>
 	/// Array on current rental from the array pool.  Reference to the same memory as <see cref="_buffer"/>.
 	/// </summary>
 	private T[]? _array;
