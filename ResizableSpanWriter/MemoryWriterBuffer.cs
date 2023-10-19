@@ -74,7 +74,7 @@ public class MemoryBufferWriter<T> : IBufferWriter<T>, IMemoryOwner<T>
 
 		this._disposed = false;
 
-		this._array = pool.Rent(initialCapacity);
+		this._array = initialCapacity == 0 ? Array.Empty<T>() : pool.Rent(initialCapacity);
 	}
 
 	/// <summary>
