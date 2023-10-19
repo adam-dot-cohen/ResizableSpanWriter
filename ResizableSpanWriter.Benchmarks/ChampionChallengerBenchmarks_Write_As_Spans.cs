@@ -17,8 +17,8 @@ using DotNext.Buffers;
 using DotNext.Collections.Generic;
 
 namespace ResizableSpanWriter.Benchmarks;
-[SimpleJob(runStrategy: RunStrategy.Throughput, launchCount: 1, invocationCount: 1, runtimeMoniker: RuntimeMoniker.Net70)]
-
+[SimpleJob(runStrategy: RunStrategy.Throughput, launchCount: 1)]
+[Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [HideColumns(Column.StdDev, Column.Median, Column.RatioSD)]
 [MemoryDiagnoser]
 public class ChampionChallengerBenchmarks_Write_As_Spans
@@ -39,7 +39,7 @@ public class ChampionChallengerBenchmarks_Write_As_Spans
     [Benchmark(Description = "High Perf Toolkit ArrayPoolWriter")]
     public void ArrayPoolBufferWriterInternal()
     {
-        using ArrayPoolBufferWriter<byte> writer = new();
+        using ArrayPoolBufferWriter<byte> writer = new(0);
 		this.Write(writer);
     }
 
